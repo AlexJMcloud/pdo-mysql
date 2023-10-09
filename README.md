@@ -20,7 +20,7 @@ composer.json file:
 ```json
 {
     "require": {
-        "izniburak/pdox": "^1"
+        "AlexJMcloud/pdo-mysql": "^1"
     }
 }
 ```

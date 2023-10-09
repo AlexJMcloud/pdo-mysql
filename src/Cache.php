@@ -11,51 +11,52 @@
 
 namespace Buki;
 
+use JsonException;
+use RuntimeException;
+
 class Cache
 {
-    protected $cacheDir = null;
-    protected $cache = null;
-    protected $finish = null;
+    protected string $cacheDir;
+    protected int $cache;
+    protected int $finish;
 
     /**
      * Cache constructor.
      *
-     * @param null $dir
+     * @param string $dir
      * @param int  $time
      */
-    function __construct($dir = null, $time = 0)
+    public function __construct(string $dir = '', int $time = 0)
     {
-        if (! file_exists($dir)) {
-            mkdir($dir, 0755);
+        if (!file_exists($dir) && !mkdir($dir, 0755) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
 
         $this->cacheDir = $dir;
         $this->cache = $time;
         $this->finish = time() + $time;
+        $this->clearCache();
     }
 
     /**
      * @param      $sql
      * @param bool $array
-     *
-     * @return bool|void
+     * @return mixed
+     * @throws JsonException
      */
-    public function getCache($sql, $array = false)
+    public function getCache($sql, bool $array = false):mixed
     {
-        if (is_null($this->cache)) {
-            return false;
-        }
 
         $cacheFile = $this->cacheDir . $this->fileName($sql) . '.cache';
         if (file_exists($cacheFile)) {
-            $cache = json_decode(file_get_contents($cacheFile), $array);
+            $cache = json_decode(file_get_contents($cacheFile), $array, 512, JSON_THROW_ON_ERROR);
 
             if (($array ? $cache['finish'] : $cache->finish) < time()) {
                 unlink($cacheFile);
-                return;
+                return false;
             }
 
-            return ($array ? $cache['data'] : $cache->data);
+            return $array ? $cache['data'] : $cache->data;
         }
 
         return false;
@@ -65,22 +66,20 @@ class Cache
      * @param $sql
      * @param $result
      *
-     * @return bool|void
+     * @return bool
+     * @throws JsonException
      */
-    public function setCache($sql, $result)
+    public function setCache($sql, $result):bool
     {
-        if (is_null($this->cache)) {
-            return false;
-        }
 
         $cacheFile = $this->cacheDir . $this->fileName($sql) . '.cache';
-        $cacheFile = fopen($cacheFile, 'w');
+        $cacheFile = fopen($cacheFile, 'wb');
 
         if ($cacheFile) {
-            fputs($cacheFile, json_encode(['data' => $result, 'finish' => $this->finish]));
+            fwrite($cacheFile, json_encode(['data' => $result, 'finish' => $this->finish], JSON_THROW_ON_ERROR));
         }
 
-        return;
+        return true;
     }
 
     /**
@@ -88,8 +87,21 @@ class Cache
      *
      * @return string
      */
-    protected function fileName($name)
+    protected function fileName($name):string
     {
         return md5($name);
+    }
+
+    protected function clearCache():void
+    {
+        $files = glob($this->cacheDir.'/*');
+        $timeCurrent=time();
+        foreach ($files as $file) {
+            $timeFile = filemtime($file);
+            if(($timeCurrent - $timeFile) > 43200)
+            {
+                unlink($file);
+            }
+        }
     }
 }

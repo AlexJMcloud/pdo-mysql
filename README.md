@@ -14,25 +14,7 @@ Fast, efficient and useful Query Builder and PDO Class for #PHP
 [![Latest Unstable Version](https://poser.pugx.org/izniburak/pdox/v/unstable.svg)](https://packagist.org/packages/izniburak/pdox)
 [![License](https://poser.pugx.org/izniburak/pdox/license.svg)](https://packagist.org/packages/izniburak/pdox)
 
-## Install
-
-composer.json file:
-```json
-{
-    "require": {
-        "AlexJMcloud/pdo-mysql": "^1"
-    }
-}
-```
-after run the install command.
-```
-$ composer install
-```
-
-OR run the following command directly.
-
-```
-$ composer require izniburak/pdox
+This php 8.1 or high
 ```
 
 ## Example Usage
